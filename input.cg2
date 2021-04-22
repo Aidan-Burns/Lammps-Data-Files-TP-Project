@@ -1,0 +1,48 @@
+# cg2
+
+units           real 
+dimension       3
+processors      * * * 
+#neigh_modify    delay 5 every 1   
+boundary        p p p 
+
+atom_style      full    #full means bio moelcules 
+bond_style      harmonic 
+angle_style     harmonic
+pair_style      hybrid/overlay lj/cut 300 morse 300       
+pair_modify     mix arithmetic 
+
+#Read data
+read_data       AND.lammps
+
+#Pair Coeffs    #lj/cut epsilon sigma
+pair_coeff 1 1 lj/cut 25 25
+pair_coeff 2 2 lj/cut 6 12.5
+pair_coeff 3 3 lj/cut 6 12.5
+pair_coeff 4 4 lj/cut 25 25
+pair_coeff 1 4 morse 25 -0.1 130      #D_0 alpha r_0
+
+
+timestep        1.0
+thermo          100 
+thermo_style    custom step temp pe press vol lx density 
+dump             1 all custom 1000 traj.lammpstrj id mol type x y z ix iy iz
+
+group            damp id 1 2 3 4
+
+#Viscosity 
+#fix 1 damp viscous 0.1
+
+#initial minimisation 
+minimize        1.0e-10 1.0e-10 10000 10000
+
+#nvt 
+fix             2 all nvt temp 300 300 100
+run             1000000      #10^6 1ns 10^7 10ns  10^8 100ns      10^9 1Mircro
+unfix           2 
+
+
+
+
+write_data      output.dat 
+write_restart   output_restart.rest
